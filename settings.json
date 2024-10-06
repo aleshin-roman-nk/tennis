@@ -1,0 +1,115 @@
+{
+    "options": [
+        {
+            "displayTitle": "Operators",
+            "multiSelectionEnabled": true,
+            "valueType": "number",
+            "values": [
+                {
+                    "id": 0,
+                    "title": "Plus",
+                    "value": "1"
+                },
+                {
+                    "id": 1,
+                    "title": "Minus",
+                    "value": "2"
+                },
+                {
+                    "id": 2,
+                    "title": "Multiplying",
+                    "value": "3"
+                },
+                {
+                    "id": 3,
+                    "title": "Dividing",
+                    "value": "4"
+                }
+            ],
+            "selected": [
+                0,
+                1
+            ]
+        },
+        {
+            "displayTitle": "Max Number",
+            "multiSelectionEnabled": false,
+            "valueType": "number",
+            "values": [
+                {
+                    "id": 0,
+                    "title": "5",
+                    "value": "5"
+                },
+                {
+                    "id": 1,
+                    "title": "10",
+                    "value": "10"
+                },
+                {
+                    "id": 2,
+                    "title": "15",
+                    "value": "15"
+                },
+                {
+                    "id": 3,
+                    "title": "20",
+                    "value": "20"
+                }
+            ],
+            "selected": [
+                2
+            ]
+        },
+        {
+            "displayTitle": "Timer",
+            "multiSelectionEnabled": false,
+            "valueType": "number",
+            "values": [
+                {
+                    "id": 0,
+                    "title": "30",
+                    "value": "30"
+                },
+                {
+                    "id": 1,
+                    "title": "60",
+                    "value": "60"
+                },
+                {
+                    "id": 2,
+                    "title": "90",
+                    "value": "90"
+                }
+            ],
+            "selected": [
+                0
+            ]
+        },
+        {
+            "displayTitle": "Levels",
+            "multiSelectionEnabled": false,
+            "valueType": "number",
+            "values": [
+                {
+                    "id": 0,
+                    "title": "first",
+                    "value": "1"
+                },
+                {
+                    "id": 1,
+                    "title": "second",
+                    "value": "2"
+                },
+                {
+                    "id": 2,
+                    "title": "third",
+                    "value": "3"
+                }
+            ],
+            "selected": [
+                1
+            ]
+        }
+    ]
+}
