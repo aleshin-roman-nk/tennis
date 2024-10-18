@@ -1,53 +1,118 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class TennisBall : MonoBehaviour
 {
-	public float forceAmount = 10f;  // Force applied to the ball
-	public float bounceForce = 5f;   // Vertical force for bouncing
-	public float maxSpeed = 20f;     // Max speed limit
+	public float speed {  get; private set; }
+	public Vector3 direction {  get; private set; }
+	public bool movmentDefined {  get; private set; } = false;
+
 	private Rigidbody rb;
 
 	void Start()
+	{
+		//rb = GetComponent<Rigidbody>();
+	}
+
+	private void Awake()
 	{
 		rb = GetComponent<Rigidbody>();
 	}
 
 	void Update()
 	{
-		HandleInput();
-		LimitSpeed();
+		if (transform.position.y < -5)
+		{
+			movmentDefined = false;
+			//StopCoroutine(speedObserver);
+			//speedObserver = null;
+			gameObject.SetActive(false);
+		}
+
+		if (movmentDefined)
+		{
+			Debug.DrawRay(new Vector3(transform.position.x, 0, transform.position.z), direction, Color.red);
+		}
 	}
 
 	public void Kick(Vector3 force)
 	{
 		rb.velocity = Vector3.zero;
 		rb.AddForce(force, ForceMode.Impulse);
+
+		//speedObserver = StartCoroutine(CalculateSpeed());
+
+		StartCoroutine(catchBallMovement());
 	}
 
-	void HandleInput()
-	{
-		// Apply forward force (for example, serve or hit)
-		if (Input.GetKeyDown(KeyCode.Space))
-		{
-			Vector3 hitDirection = -transform.forward; // Forward direction for hit
-			rb.AddForce(hitDirection * forceAmount, ForceMode.Impulse);
-		}
+	private Coroutine speedObserver = null;
 
-		// Bounce simulation (for example, after hitting the ground)
-		if (Input.GetKeyDown(KeyCode.B))
+	private IEnumerator CalculateSpeed()
+	{
+		Vector3 previousPosition = new Vector3(transform.position.x, 0, transform.position.z);
+		float previousTime = Time.time;
+		float speedXZ;
+
+		while (true)
 		{
-			rb.AddForce(Vector3.up * bounceForce, ForceMode.Impulse);
+			// Wait for 0.1 seconds
+			yield return new WaitForSeconds(0.05f);
+
+			// Capture the current position in the XZ plane
+			Vector3 currentPosition = new Vector3(transform.position.x, 0, transform.position.z);
+
+			// Calculate the distance traveled in the XZ plane
+			float distanceXZ = Vector3.Distance(currentPosition, previousPosition);
+
+			// Calculate the time elapsed between frames
+			float currentTime = Time.time;
+			float elapsedTime = currentTime - previousTime;
+
+			// Speed = Distance / Time
+			speedXZ = distanceXZ / elapsedTime;
+
+			// Output the speed in the XZ plane
+			//Debug.Log($"me zx speed {speedXZ} | RB zx speed {new Vector3(rb.velocity.x, 0, rb.velocity.z).magnitude} | absolute speed {rb.velocity.magnitude}");
+			Debug.Log($"distance {distanceXZ} | time {elapsedTime}");
+
+			// Update the previous position for the next calculation
+			previousPosition = currentPosition;
+			previousTime = currentTime;
 		}
 	}
 
-	void LimitSpeed()
+	private IEnumerator catchBallMovement()
 	{
-		// Limit the velocity to maxSpeed to simulate realistic ball behavior
-		if (rb.velocity.magnitude > maxSpeed)
+		float delta = 0;
+
+		var positionA = transform.position;
+		var positionB = positionA;
+
+		float time1 = Time.time;
+
+		while (delta == 0)
 		{
-			rb.velocity = rb.velocity.normalized * maxSpeed;
+			positionB = transform.position;
+			delta = Vector3.Distance(positionB, positionA);
+			yield return null;
 		}
+
+		//var deltaTime = Time.time - time1;
+
+		//positionB = new Vector3(positionB.x, 0, positionB.z);
+		//positionA = new Vector3(positionA.x, 0, positionA.z);
+
+		//direction = (positionB - positionA).normalized;
+
+		//var distance = (positionB - positionA).magnitude;
+		//speed = distance / deltaTime;
+
+		direction = new Vector3(rb.velocity.x, 0, rb.velocity.z).normalized;
+		speed = rb.velocity.magnitude;
+
+		movmentDefined = true;
 	}
 }
