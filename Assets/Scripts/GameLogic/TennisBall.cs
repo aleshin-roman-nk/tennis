@@ -111,7 +111,7 @@ public class TennisBall : MonoBehaviour
 		//speed = distance / deltaTime;
 
 		direction = new Vector3(rb.velocity.x, 0, rb.velocity.z).normalized;
-		speed = rb.velocity.magnitude;
+		speed = new Vector3(rb.velocity.x, 0, rb.velocity.z).magnitude;
 
 		movmentDefined = true;
 	}

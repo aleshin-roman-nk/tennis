@@ -66,20 +66,20 @@ public class TennisMan : MonoBehaviour
 
 		yield return new WaitUntil(() => b.movmentDefined);
 
-		var ballFallPoint = findPointWhereBallFalls(ballCurrentObservable, areaToPlayBall);
+		var ballFallPoint = findPointWhereBallFallsXZ(ballCurrentObservable, areaToPlayBall);
 
 		var rightSide = true;
-		Vector3 positionToStrikeBall = Vector3.zero;
+		Vector3 tennisManPositionToStrikeBall = Vector3.zero;
 
 		if (Vector3.Distance(ballFallPoint, rightStrike.transform.position) < Vector3.Distance(ballFallPoint, leftStrike.transform.position))
 		{
 			rightSide = true;
-			positionToStrikeBall = transform.position + (ballFallPoint - rightStrike.transform.position);// + ballCurrentObservable.speed * ballCurrentObservable.direction * 0.5f;
+			tennisManPositionToStrikeBall = transform.position + (ballFallPoint - rightStrike.transform.position);// + ballCurrentObservable.speed * ballCurrentObservable.direction * 0.5f;
 		}
 		else
 		{
 			rightSide = false;
-			positionToStrikeBall = transform.position + (ballFallPoint - leftStrike.transform.position);// + ballCurrentObservable.speed * ballCurrentObservable.direction * 0.5f;
+			tennisManPositionToStrikeBall = transform.position + (ballFallPoint - leftStrike.transform.position);// + ballCurrentObservable.speed * ballCurrentObservable.direction * 0.5f;
 		}
 
 		moveObjectWithAcceleration.OnStartMoving = () =>
@@ -98,7 +98,27 @@ public class TennisMan : MonoBehaviour
 			}
 		};
 
-		yield return StartCoroutine(moveObjectWithAcceleration.update(transform.position, positionToStrikeBall, 0, 6, 0.5f));
+		yield return StartCoroutine(moveObjectWithAcceleration.update(transform.position, tennisManPositionToStrikeBall, 0, 6, 0.5f));
+
+		idle();
+
+		const float hitAnimationTime = 0.6f;
+		var distanceHit = ballCurrentObservable.speed * hitAnimationTime;
+
+		var tennisManPositionToStrikeBallXZ = new Vector3(tennisManPositionToStrikeBall.x, 0, tennisManPositionToStrikeBall.z);
+		var ballPositionCurrentXZ = new Vector3(ballCurrentObservable.transform.position.x, 0, ballCurrentObservable.transform.position.z);
+
+		// add condition: if the rest of ball path is less than hitting animation lenght, the man is lost and does not start hitting
+		if(Vector3.Distance(ballPositionCurrentXZ, tennisManPositionToStrikeBallXZ) < distanceHit)
+		{
+			yield break;
+		}
+
+		yield return new WaitUntil(() => 
+		{
+			ballPositionCurrentXZ = new Vector3(ballCurrentObservable.transform.position.x, 0, ballCurrentObservable.transform.position.z);
+			return Vector3.Distance(ballPositionCurrentXZ, tennisManPositionToStrikeBallXZ) <= distanceHit;
+		});
 
 		yield return StartCoroutine(hitBall(rightSide));
 
@@ -130,10 +150,33 @@ public class TennisMan : MonoBehaviour
 			}
 		}
 
-		yield return new WaitForSeconds(0.5f);
+		yield return new WaitForSeconds(0.66f);
+
+		//Debug.Log("hitBall>");
+
+		//string animationTrigger = rightSide ? "Backhand" : "Forehand";
+
+		//// Set the appropriate animation trigger
+		//foreach (var animator in animators)
+		//{
+		//	animator.SetTrigger(animationTrigger);
+		//}
+
+		//// Wait until the animation is finished
+		//foreach (var animator in animators)
+		//{
+		//	yield return new WaitUntil(() =>
+		//	{
+		//		AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0); // 0 is the layer index
+		//		//Debug.Log(stateInfo.length);
+		//		return stateInfo.IsName(animationTrigger) && stateInfo.normalizedTime >= 1;
+		//	});
+		//}
+
+		//Debug.Log("hitBall<");
 	}
 
-	private Vector3 findPointWhereBallFalls(TennisBall b, AreaToPlayBall a)
+	private Vector3 findPointWhereBallFallsXZ(TennisBall b, AreaToPlayBall a)
 	{
 		Vector3 pos = b.transform.position;  // Current position of the object (x1, z1)
 		Vector3 dir = b.direction;   // Assuming direction is normalized (dx, dz)
