@@ -6,7 +6,7 @@ public class AreaToPlayBall : MonoBehaviour
 {
 	[SerializeField] private Vector3 areaToPlay = new Vector3(1, 1, 1);
 
-	public Vector3 AreaToPlay => areaToPlay;
+	public Vector3 area => areaToPlay;
 
 	// Start is called before the first frame update
 	void Start()

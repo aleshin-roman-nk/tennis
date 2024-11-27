@@ -9,5 +9,5 @@ public interface IGameManager
 	void PauseGame();
 	void ResumeGame();
 	void StopGame();
-	event EventHandler GameOver;
+	event Action GameOver;
 }

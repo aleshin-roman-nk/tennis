@@ -13,9 +13,7 @@ public class GameStateManager : MonoBehaviour
 	[SerializeField] private RulesPage rulesPage;
 
 	[SerializeField] private GameManager gameManager;
-	[SerializeField] private GameMusicManager gameMusicManager;
 	[SerializeField] private ReadySetGoTimer rsgTimer;
-	[SerializeField] private GameScoresManager gameScoresManager;
 
 	[SerializeField] private string[] greetingTexts;
 
@@ -25,13 +23,7 @@ public class GameStateManager : MonoBehaviour
 
 	private IGameManager _gameManager;
 
-	public float gameDelay = 5;
-
 	private AudioSource player;
-
-	private int _level;
-
-	//private SaveLoadSettings settings = null;
 
 	private RandomList<string> greetingTextsRandomList;
 
@@ -45,9 +37,9 @@ public class GameStateManager : MonoBehaviour
 		StartCoroutine(firstInitAndStartCoroutine());
 	}
 
-	private void _gameManager_GameOver(object sender, System.EventArgs e)
+	private void _gameManager_GameOver()
 	{
-		StartCoroutine(toFinalPageCoroutine());
+		StartCoroutine(enterFinalPageCoroutine());
 	}
 
 	private IEnumerator firstInitAndStartCoroutine()
@@ -75,22 +67,19 @@ public class GameStateManager : MonoBehaviour
 		yield return StartCoroutine(darkenPage.UndarkenScreen(0.7f));
 
 		yield return new WaitForSeconds(2.0f);
-
-		//player.volume = gameMusicManager.MusicVolume;
-		playMusic(gameMusicManager.gameMenuList.Next());
 	}
 
 	private void RulesPage_StartGame(object sender, System.EventArgs e)
 	{
-		StartCoroutine(toGamePageCoroutine());
+		StartCoroutine(enterGamePageCoroutine());
 	}
 
 	private void FinalPage_RestartClicked(object sender, System.EventArgs e)
 	{
-		StartCoroutine(toStartPageCoroutine());
+		StartCoroutine(enterStartPageCoroutine());
 	}
 
-	private IEnumerator toGamePageCoroutine()
+	private IEnumerator enterGamePageCoroutine()
 	{
 		rulesPage.ExitPage();
 		gamePage.EnterPage();
@@ -101,17 +90,13 @@ public class GameStateManager : MonoBehaviour
 
 		preventGaming.SetActive(false);
 
-		playMusic(gameMusicManager.gameMusicList.Next());
-
 		_gameManager.PlayGame();
 	}
 
-	private IEnumerator toStartPageCoroutine()
+	private IEnumerator enterStartPageCoroutine()
 	{
 		stopMusic();
 		yield return StartCoroutine(darkenPage.DarkenScreen(1.0f, 0.7f));
-
-		gameScoresManager.ResetScores();
 
 		gamePage.EnterPage();
 		finalPage.ExitPage();
@@ -123,11 +108,9 @@ public class GameStateManager : MonoBehaviour
 		yield return StartCoroutine(darkenPage.UndarkenScreen(0.7f));
 
 		yield return new WaitForSeconds(2.0f);
-
-		playMusic(gameMusicManager.gameMenuList.Next());
 	}
 
-	private IEnumerator toFinalPageCoroutine()
+	private IEnumerator enterFinalPageCoroutine()
 	{
 		yield return new WaitForSeconds(1.5f);
 
@@ -135,12 +118,6 @@ public class GameStateManager : MonoBehaviour
 
 		finalPage.GreatingText(greetingTextsRandomList.Next());
 		finalPage.EnterPage();
-	}
-
-	private void playMusic(AudioClip clip)
-	{
-		player.clip = clip;
-		player.Play();
 	}
 
 	private void stopMusic()

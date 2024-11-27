@@ -6,29 +6,77 @@ using UnityEngine;
 
 public class GameManager : MonoBehaviour, IGameManager
 {
+	[SerializeField] GameMusicManager gameMusicManager;
+	[SerializeField] private HumanPlayer humanPlayer;
+	[SerializeField] private AIPlayer tennisMan;
 	[SerializeField] private GameScoresManager gameScoresManager;
+	[SerializeField] private int BallsCount = 10;
 
-	EventBus eventBus;
-	public event EventHandler GameOver;
+	public event Action GameOver;
 
-	private AudioSource audioSource;
+	[SerializeField] private AudioSource crowdNoiseAudioSource;
+	[SerializeField] private AudioSource crowdGoalAudioSource;
+
+	private int goals = 0;
+	private int scores = 0;
 
 	private bool gameIsAlreadyOver = false;
 
 	private void Start()
 	{
-		audioSource = GetComponent<AudioSource>();
+
 	}
 
-	private void CdTimer_Expired(object sender, EventArgs e)
+	private void OnEnable()
 	{
-		if(!gameIsAlreadyOver) GameOver?.Invoke(this, EventArgs.Empty);
+		tennisMan.OnGoal += TennisMan_OnGoal;
+	}
+
+	private void OnDisable()
+	{
+		tennisMan.OnGoal -= TennisMan_OnGoal;
+	}
+
+	private void TennisMan_OnGoal()
+	{
+		return;
+
+		goals++;
+
+		if (goals == 0)
+			scores = 0;
+		else if (goals == 1)
+			scores = 15;
+		else if (goals == 2)
+			scores = 30;
+		else if (goals == 3)
+			scores = 40;
+
+		//playGoal();
+
+		gameScoresManager.SetScores(scores);
+
+		if (goals == 4)
+		{
+			StartCoroutine(endSession());
+		}
 	}
 
 	public void PlayGame()
 	{
+		playCrowd();
+		humanPlayer.CanPlay(true);
+		goals = 0;
+		scores = 0;
 		gameIsAlreadyOver = false;
 		gameScoresManager.ResetScores();
+	}
+
+	private IEnumerator endSession()
+	{
+		humanPlayer.CanPlay(false);
+		yield return new WaitForSeconds(3);
+		GameOver?.Invoke();
 	}
 
 	public void PauseGame()
@@ -44,5 +92,21 @@ public class GameManager : MonoBehaviour, IGameManager
 	public void StopGame()
 	{
 		throw new NotImplementedException();
+	}
+
+	private void playCrowd()
+	{
+		//crowdGoalAudioSource.Stop();
+		//crowdNoiseAudioSource.clip = gameMusicManager.crowdSoundList.Next();
+		//crowdNoiseAudioSource.loop = true;
+		//crowdGoalAudioSource.Play();
+	}
+
+	private void playGoal()
+	{
+		crowdGoalAudioSource.Stop();
+		crowdGoalAudioSource.clip = gameMusicManager.goalSoundList.Next();
+		crowdNoiseAudioSource.loop = false;
+		crowdGoalAudioSource.Play();
 	}
 }

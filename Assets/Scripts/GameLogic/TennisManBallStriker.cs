@@ -4,13 +4,24 @@ using UnityEngine;
 
 public class TennisManBallStriker : MonoBehaviour
 {
+	[SerializeField] private HumanPlayer humanPlayer;
+
+	private void Start()
+	{
+
+	}
+
 	private void OnTriggerEnter(Collider other)
 	{
 		// Check if the object that entered the trigger is in the "ball" layer
-		if (other.gameObject.layer == LayerMask.NameToLayer("ball"))
+		if (other.CompareTag("Ball"))
 		{
 			var rb = other.gameObject.GetComponent<Rigidbody>();
-			rb.velocity = -rb.velocity * 1.5f;
+			var ball = other.gameObject.GetComponent<TennisBall>();
+
+			var pos = humanPlayer.Next();
+
+			ball.Kick(pos.transform.position, KickedBy.ai, 14);
 		}
 	}
 }

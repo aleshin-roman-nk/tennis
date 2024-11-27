@@ -1,20 +1,25 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using TouchScript.Examples.RawInput;
 using Unity.VisualScripting;
 using UnityEngine;
 
 public class TennisBall : MonoBehaviour
 {
-	public float speed {  get; private set; }
-	public Vector3 direction {  get; private set; }
-	public bool movmentDefined {  get; private set; } = false;
+	public float speedXZ {  get; private set; }
+	public Vector3 directionXZ {  get; private set; }
 
 	private Rigidbody rb;
+	private Vector3 initialVelocity = Vector3.zero;
+	private Vector3 gravityEffect; // Store the scaled gravity effect
+
+	public KickedBy whoKicked { get; private set; }
+	public bool hitNet { get; private set; }
 
 	void Start()
 	{
-		//rb = GetComponent<Rigidbody>();
+		gravityEffect = Physics.gravity;
 	}
 
 	private void Awake()
@@ -22,97 +27,132 @@ public class TennisBall : MonoBehaviour
 		rb = GetComponent<Rigidbody>();
 	}
 
+	private float oldSpeed = 0;
+
 	void Update()
 	{
-		if (transform.position.y < -5)
-		{
-			movmentDefined = false;
-			//StopCoroutine(speedObserver);
-			//speedObserver = null;
-			gameObject.SetActive(false);
-		}
+		speedXZ = new Vector3(rb.velocity.x, 0, rb.velocity.z).magnitude;
+		directionXZ = new Vector3(rb.velocity.x, 0, rb.velocity.z).normalized;
 
-		if (movmentDefined)
+		//if(hightlightImage.gameObject.activeSelf)
+		//{
+		//	Vector3 screenPosition = Camera.main.WorldToScreenPoint(transform.position);
+
+		//	// Convert the screen position to a local position on the Canvas
+		//	RectTransformUtility.ScreenPointToLocalPointInRectangle(
+		//		hightlightImage.parent as RectTransform,
+		//		screenPosition,
+		//		Camera.main,
+		//		out Vector2 localPosition
+		//	);
+
+		//	// Update the UI element's position
+		//	hightlightImage.localPosition = localPosition;
+		//}
+
+		//if (elapsedLifeTime >= lifeTime)
+		//{
+		//	movmentDefined = false;
+		//	gameObject.SetActive(false);
+		//}
+
+		//if (movmentDefined)
+		//{
+		//	speedXZ = new Vector3(rb.velocity.x, 0, rb.velocity.z).magnitude;
+		//	directionXZ = new Vector3(rb.velocity.x, 0, rb.velocity.z).normalized;
+		//	if (oldSpeed != speedXZ)
+		//	{
+		//		OnVelocityXZChanged?.Invoke(speedXZ * directionXZ);
+		//		points.Add(rb.position);
+		//	}
+		//	oldSpeed = speedXZ;
+		//	Debug.DrawRay(new Vector3(transform.position.x, 0.1f, transform.position.z), directionXZ, Color.red);
+		//}
+
+//		elapsedLifeTime += Time.deltaTime;
+	}
+
+	public void RestoreMovement()
+	{
+		restoreMovement();
+	}
+
+	public void SlowdownMovement(float sdFactor)
+	{
+		changeMovement(sdFactor);
+	}
+
+	private void OnCollisionEnter(Collision collision)
+	{
+		// When hitting the ground, maintain XZ direction
+		if (collision.gameObject.CompareTag("ground"))
 		{
-			Debug.DrawRay(new Vector3(transform.position.x, 0, transform.position.z), direction, Color.red);
+			//Debug.Log($"hit grount {rb.velocity}");
+			rb.velocity = new Vector3(initialVelocity.x, rb.velocity.y, initialVelocity.z);
+		}
+		// When hitting the ground, maintain XZ direction
+		else if (collision.gameObject.CompareTag("TennisBallNet"))
+		{
+			hitNet = true;
 		}
 	}
 
-	public void Kick(Vector3 force)
+	private void changeMovement(float factor)
 	{
+		rb.useGravity = false;
+		rb.velocity *= factor;
+	}
+
+	private void restoreMovement()
+	{
+		rb.velocity = initialVelocity.magnitude * rb.velocity.normalized;
+		rb.useGravity = true;
+	}
+
+	public HumanBallPoint humanBallPoint { get; private set; }
+
+	public IEnumerator Kick(Vector3 targetPoint, KickedBy whoKicked, float speed, HumanBallPoint hpTarget = null)
+	{
+		this.whoKicked = whoKicked;
+		this.hitNet = false;
+		humanBallPoint = hpTarget;
+
+		rb.useGravity = true;
 		rb.velocity = Vector3.zero;
-		rb.AddForce(force, ForceMode.Impulse);
 
-		//speedObserver = StartCoroutine(CalculateSpeed());
+		LaunchBallWithSpeed(rb, transform.position, targetPoint, speed);
 
-		StartCoroutine(catchBallMovement());
+		yield return null;
+		initialVelocity = rb.velocity;
 	}
 
-	private Coroutine speedObserver = null;
-
-	private IEnumerator CalculateSpeed()
+	private void LaunchBallWithSpeed(Rigidbody rb, Vector3 startPoint, Vector3 targetPoint, float speed)
 	{
-		Vector3 previousPosition = new Vector3(transform.position.x, 0, transform.position.z);
-		float previousTime = Time.time;
-		float speedXZ;
+		// Gravity (from Unity's physics system)
+		Vector3 gravity = Physics.gravity;
 
-		while (true)
-		{
-			// Wait for 0.1 seconds
-			yield return new WaitForSeconds(0.05f);
+		// Horizontal displacement (XZ-plane)
+		Vector3 horizontalDisplacement = new Vector3(targetPoint.x - startPoint.x, 0, targetPoint.z - startPoint.z);
+		float horizontalDistance = horizontalDisplacement.magnitude;
 
-			// Capture the current position in the XZ plane
-			Vector3 currentPosition = new Vector3(transform.position.x, 0, transform.position.z);
+		// Calculate time of flight based on speed
+		float timeToTarget = horizontalDistance / speed;
 
-			// Calculate the distance traveled in the XZ plane
-			float distanceXZ = Vector3.Distance(currentPosition, previousPosition);
+		// Calculate horizontal velocity
+		Vector3 horizontalVelocity = horizontalDisplacement.normalized * speed;
 
-			// Calculate the time elapsed between frames
-			float currentTime = Time.time;
-			float elapsedTime = currentTime - previousTime;
+		// Calculate vertical velocity
+		float verticalDisplacement = targetPoint.y - startPoint.y;
+		float verticalVelocity = (verticalDisplacement / timeToTarget) - (0.5f * gravity.y * timeToTarget);
 
-			// Speed = Distance / Time
-			speedXZ = distanceXZ / elapsedTime;
+		// Combine velocities
+		Vector3 initialVelocity = new Vector3(horizontalVelocity.x, verticalVelocity, horizontalVelocity.z);
 
-			// Output the speed in the XZ plane
-			//Debug.Log($"me zx speed {speedXZ} | RB zx speed {new Vector3(rb.velocity.x, 0, rb.velocity.z).magnitude} | absolute speed {rb.velocity.magnitude}");
-			Debug.Log($"distance {distanceXZ} | time {elapsedTime}");
-
-			// Update the previous position for the next calculation
-			previousPosition = currentPosition;
-			previousTime = currentTime;
-		}
-	}
-
-	private IEnumerator catchBallMovement()
-	{
-		float delta = 0;
-
-		var positionA = transform.position;
-		var positionB = positionA;
-
-		float time1 = Time.time;
-
-		while (delta == 0)
-		{
-			positionB = transform.position;
-			delta = Vector3.Distance(positionB, positionA);
-			yield return null;
-		}
-
-		//var deltaTime = Time.time - time1;
-
-		//positionB = new Vector3(positionB.x, 0, positionB.z);
-		//positionA = new Vector3(positionA.x, 0, positionA.z);
-
-		//direction = (positionB - positionA).normalized;
-
-		//var distance = (positionB - positionA).magnitude;
-		//speed = distance / deltaTime;
-
-		direction = new Vector3(rb.velocity.x, 0, rb.velocity.z).normalized;
-		speed = new Vector3(rb.velocity.x, 0, rb.velocity.z).magnitude;
-
-		movmentDefined = true;
+		// Apply force or velocity
+		rb.velocity = initialVelocity; // Directly set velocity
+									   // OR, for AddForce:
+									   // rb.AddForce(initialVelocity * rb.mass, ForceMode.Impulse);
 	}
 }
+
+public enum KickedBy { rest = 0, human = 1, ai = 2 }

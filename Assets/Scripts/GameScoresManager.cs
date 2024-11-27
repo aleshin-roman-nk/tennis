@@ -24,6 +24,12 @@ public class GameScoresManager : MonoBehaviour
 		ScoresText.text = Scores.ToString();
 	}
 
+	public void SetScores(int scores)
+	{
+		Scores = scores;
+		ScoresText.text = Scores.ToString();
+	}
+
 	public void ResetScores()
 	{
 		Scores = 0;
